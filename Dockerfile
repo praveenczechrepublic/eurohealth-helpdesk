@@ -1,5 +1,15 @@
-# EuroHealth AI Helpdesk — Docker Configuration
-# AI-SE designs during Day 13:
-# - Base image selection (Python 3.11+)
-# - On-prem LLM requirements
-# - Policy files mounted as volume
+FROM python:3.12-slim
+
+WORKDIR /app
+
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+
+COPY src/ ./src/
+COPY governance/ ./governance/
+COPY config/ ./config/ 2>/dev/null || true
+
+ENV PYTHONPATH=/app
+ENV ENV=production
+
+CMD ["python3", "src/agent.py"]
