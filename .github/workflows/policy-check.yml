@@ -1,0 +1,71 @@
+name: policy-check
+
+on:
+  push:
+    paths:
+      - "governance/policies/**"
+      - "governance/evidence/audit-log-schema.json"
+      - ".github/workflows/policy-check.yml"
+  pull_request:
+    paths:
+      - "governance/policies/**"
+      - "governance/evidence/audit-log-schema.json"
+      - ".github/workflows/policy-check.yml"
+
+jobs:
+  validate-policies:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: python -m pip install --upgrade pip pyyaml
+
+      - name: Validate policy YAML and audit schema
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          import yaml
+
+          policy_dir = Path("governance/policies")
+          policy_files = sorted(policy_dir.glob("*.yaml"))
+          assert policy_files, "No policy files found in governance/policies/"
+
+          for file in policy_files:
+              with file.open("r", encoding="utf-8") as fh:
+                  doc = yaml.safe_load(fh)
+              assert isinstance(doc, dict), f"{file}: expected YAML object"
+              assert "policy" in doc and isinstance(doc["policy"], dict), f"{file}: missing policy block"
+              assert "name" in doc["policy"], f"{file}: policy.name is required"
+              assert "rules" in doc and isinstance(doc["rules"], list), f"{file}: rules must be a list"
+
+              ids = [r.get("id") for r in doc["rules"] if isinstance(r, dict)]
+              assert len(ids) == len(set(ids)), f"{file}: duplicate rule id detected"
+              for rule in doc["rules"]:
+                  assert isinstance(rule, dict), f"{file}: each rule must be an object"
+                  assert "id" in rule, f"{file}: rule.id is required"
+                  assert "then" in rule, f"{file}: rule.then is required"
+
+          schema_file = Path("governance/evidence/audit-log-schema.json")
+          with schema_file.open("r", encoding="utf-8") as fh:
+              schema = json.load(fh)
+
+          assert schema.get("type") == "object", "audit schema must be an object schema"
+          required = set(schema.get("required", []))
+          for field in ("timestamp", "event_type", "session_id", "decision", "latency_ms"):
+              assert field in required, f"audit schema missing required field: {field}"
+
+          latency = schema.get("properties", {}).get("latency_ms", {})
+          latency_required = set(latency.get("required", []))
+          for field in ("policy_evaluation", "total"):
+              assert field in latency_required, f"audit schema latency_ms missing required field: {field}"
+
+          print("Policy and audit schema validation passed.")
+          PY

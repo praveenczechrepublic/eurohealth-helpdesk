@@ -1,0 +1,32 @@
+policy:
+  name: content-freshness
+  version: "1.0"
+  description: Detect and flag outdated knowledge base content
+  owner: AI-DS
+  last_reviewed: "2026-02-25"
+  context: "~30% of Confluence KB is currently outdated (discovery finding)"
+
+rules:
+  - id: stale-content-warning
+    description: Flag responses based on documents older than threshold
+    if: source_document.last_updated < (today - 180 days)
+    then: warn
+    action: append_disclaimer
+    disclaimer: "Note: This information is based on a document last updated over 6 months ago. Please verify with your team lead."
+    log: "Stale content served — source older than 180 days"
+    severity: medium
+
+  - id: critical-stale-content
+    description: Block responses from very old documents in critical categories
+    if: source_document.last_updated < (today - 365 days) AND category IN [security, compliance, access_control]
+    then: block
+    substitute_response: "I found relevant information, but it may be outdated. Please contact IT directly for the latest guidance."
+    log: "Critical stale content blocked"
+    severity: high
+
+  - id: unversioned-content
+    description: Flag content with no update timestamp
+    if: source_document.last_updated IS NULL
+    then: warn
+    log: "Unversioned content served"
+    severity: low

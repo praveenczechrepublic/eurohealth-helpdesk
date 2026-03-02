@@ -1,0 +1,33 @@
+policy:
+  name: pii-protection
+  version: "1.0"
+  description: Block responses containing employee PII
+  owner: AI-SEC
+  last_reviewed: "2026-02-25"
+  eu_ai_act_reference: "Article 10 — Data Governance"
+
+rules:
+  - id: block-salary-data
+    description: Prevent disclosure of salary and compensation data
+    if: response.contains(salary, compensation, plat, gehalt, personal_id, rodné_číslo)
+    then: block
+    substitute_response: "I cannot share personal salary information. Please contact HR directly."
+    log: "PII attempt blocked — salary/compensation data"
+    escalate_to: human_agent
+    severity: critical
+
+  - id: block-contact-info
+    description: Redact personal contact information from responses
+    if: response.contains(personal_phone, personal_email, home_address, mobile)
+    then: redact
+    log: "PII redacted — personal contact information"
+    severity: high
+
+  - id: block-health-data
+    description: Block any health or medical information disclosure
+    if: response.contains(diagnosis, medical_record, sick_leave, health_status)
+    then: block
+    substitute_response: "Health-related information is confidential. Please contact HR."
+    log: "PII attempt blocked — health data"
+    escalate_to: human_agent
+    severity: critical

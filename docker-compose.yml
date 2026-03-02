@@ -1,0 +1,27 @@
+version: "3.9"
+
+services:
+  policy-engine:
+    image: python:3.12-slim
+    container_name: eurohealth-policy-engine
+    working_dir: /app
+    volumes:
+      - ./:/app
+      - ./governance/policies:/app/governance/policies:ro
+      - ./data:/app/data
+    command: ["sleep", "infinity"]
+    environment:
+      - PYTHONUNBUFFERED=1
+      - POLICY_DIR=/app/governance/policies
+      - AUDIT_LOG_PATH=/app/data/audit/audit-events.jsonl
+
+  qdrant:
+    image: qdrant/qdrant:v1.9.5
+    container_name: eurohealth-qdrant
+    ports:
+      - "6333:6333"
+    volumes:
+      - qdrant_storage:/qdrant/storage
+
+volumes:
+  qdrant_storage:

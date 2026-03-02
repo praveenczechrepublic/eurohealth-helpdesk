@@ -1,0 +1,34 @@
+policy:
+  name: escalation-rules
+  version: "1.0"
+  description: Define when AI must escalate to human agent
+  owner: AI-SEC
+  last_reviewed: "2026-02-25"
+  eu_ai_act_reference: "Article 14 — Human Oversight"
+
+rules:
+  - id: low-confidence-escalation
+    description: Escalate when agent confidence is below threshold
+    if: response.confidence < 0.7
+    then: escalate
+    escalate_to: human_agent
+    log: "Low confidence escalation"
+    severity: medium
+
+  - id: repeated-query-escalation
+    description: Escalate when user asks the same question 3+ times
+    if: session.repeat_count >= 3
+    then: escalate
+    escalate_to: human_agent
+    substitute_response: "Let me connect you with a human agent who can help with this."
+    log: "Repeated query escalation"
+    severity: medium
+
+  - id: explicit-human-request
+    description: Always honor user request for human agent
+    if: query.intent == "speak_to_human"
+    then: escalate
+    escalate_to: human_agent
+    substitute_response: "Connecting you with a human agent now."
+    log: "User requested human agent"
+    severity: low

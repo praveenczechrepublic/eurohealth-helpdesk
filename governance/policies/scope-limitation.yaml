@@ -1,0 +1,23 @@
+policy:
+  name: scope-limitation
+  version: "1.0"
+  description: Restrict agent to IT helpdesk topics only
+  owner: AI-SEC
+  last_reviewed: "2026-02-25"
+
+rules:
+  - id: block-non-it-topics
+    description: Redirect queries outside IT helpdesk scope
+    if: query.topic NOT IN [password_reset, vpn, software_install, hardware_request, email_config, printer, network, access_request]
+    then: redirect
+    substitute_response: "I can only help with IT helpdesk topics. For other inquiries, please contact the relevant department."
+    log: "Out-of-scope query redirected"
+    severity: low
+
+  - id: block-opinion-requests
+    description: Prevent agent from giving personal opinions
+    if: query.intent IN [opinion, recommendation, preference]
+    then: redirect
+    substitute_response: "I provide factual IT support information. For recommendations, please consult your team lead."
+    log: "Opinion request redirected"
+    severity: low
