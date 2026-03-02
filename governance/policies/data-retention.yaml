@@ -6,7 +6,6 @@ policy:
   last_reviewed: "2026-02-25"
   eu_ai_act_reference: "Article 12 — Record-keeping"
   gdpr_reference: "Article 5(1)(e) — Storage limitation"
-
 rules:
   - id: audit-log-retention
     data_type: pep_decision_logs
@@ -14,7 +13,7 @@ rules:
     rationale: "EU AI Act requires logs for high-risk systems to be retained for the system lifecycle"
     storage: on-premises encrypted storage
     deletion_method: secure_wipe
-
+    then: retain
   - id: query-log-retention
     data_type: user_queries
     retention_period: "90 days"
@@ -22,14 +21,15 @@ rules:
     storage: on-premises encrypted storage
     deletion_method: secure_wipe
     anonymize_after: "30 days"
-
+    then: retain
   - id: override-log-retention
     data_type: human_override_records
     retention_period: "1 year"
     rationale: "Governance evidence for human oversight compliance"
     storage: on-premises encrypted storage
-
+    then: retain
   - id: model-artifacts-retention
     data_type: model_versions_and_configs
     retention_period: "system lifecycle + 1 year"
     rationale: "Reproducibility and audit trail for model decisions"
+    then: retain
